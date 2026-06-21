@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SMEDTEC Studio — Connected Compliance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#2E3F57; --navy-2:#243349; --teal:#00C5A8; --teal-deep:#00A089;
+    --gold:#D98A1F; --warning:#E9A23B; --ink:#1A2433; --muted:#4D6880; --bg:#FAFBFC;
+    --surface:#FFFFFF; --hair:#E4E8EE; --hair-2:#EDF0F4; --soft:#F3F6F9;
+    --shadow:0 1px 2px rgba(26,36,51,.04), 0 8px 24px rgba(26,36,51,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"DM Sans",system-ui,sans-serif; color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums; line-height:1.6;}
+  .mono{font-family:"JetBrains Mono",monospace}
+
+  header.bar{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px clamp(16px,4vw,40px); border-bottom:1px solid var(--hair); background:var(--surface);}
+  .wordmark{font-weight:700; letter-spacing:.02em; font-size:18px; color:var(--navy)}
+  .wordmark .dot{color:var(--teal)}
+  .bar .desc{font-size:13px; color:var(--muted); max-width:44ch}
+  .bar .right{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); text-align:right}
+
+  .controls{display:flex; align-items:flex-end; gap:clamp(16px,3vw,32px); flex-wrap:wrap; padding:18px clamp(16px,4vw,40px) 14px; border-bottom:1px solid var(--hair-2); background:var(--surface);}
+  .ctl-group{display:flex; flex-direction:column; gap:8px; min-width:0}
+  .ctl-label{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .chips{display:flex; gap:7px; flex-wrap:wrap}
+  .chip{appearance:none; border:1px solid var(--hair); background:var(--surface); color:var(--ink); font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:999px; cursor:pointer; transition:border-color .15s, background .15s, color .15s;}
+  .chip:hover{border-color:#C9D2DD}
+  .chip[aria-pressed="true"]{background:var(--navy); border-color:var(--navy); color:#fff}
+  .chip:focus-visible, .play:focus-visible, .stack-toggle:focus-visible, .name-input:focus-visible, .node:focus-visible, .decide-btn:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+  .play{appearance:none; border:none; background:var(--teal); color:#06241f; font-family:inherit; font-weight:600; font-size:13.5px; padding:9px 18px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:filter .15s, background .15s;}
+  .play:hover{filter:brightness(1.04)}
+  .play .tri{width:0;height:0;border-left:8px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .play.is-stop{background:var(--soft); color:var(--ink); border:1px solid var(--hair)}
+  .play.is-stop .tri{border:none; width:9px; height:9px; background:currentColor}
+  .name-input{font-family:inherit; font-size:13px; padding:8px 11px; border:1px solid var(--hair); border-radius:8px; width:170px; color:var(--ink); background:var(--surface);}
+  .stack{display:flex; gap:7px; flex-wrap:wrap}
+  .stack-toggle{appearance:none; border:1px dashed var(--hair); background:var(--surface); color:var(--muted); font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.04em; padding:6px 10px; border-radius:7px; cursor:pointer; transition:all .15s;}
+  .stack-toggle[aria-pressed="true"]{border-style:solid; border-color:var(--teal); color:var(--teal-deep); background:#F0FBF9}
+
+  .work{display:grid; grid-template-columns:1fr 340px; gap:0; align-items:stretch}
+  .canvas-wrap{padding:clamp(12px,2.5vw,24px) clamp(14px,2.5vw,28px); min-width:0; overflow-x:auto}
+
+  .sysbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:2px 2px 14px; font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--muted)}
+  .sb-left{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .sb-right{display:flex; align-items:center; gap:8px}
+  .ghost-btn{appearance:none; border:1px solid var(--hair); background:#fff; color:var(--muted); font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border-radius:6px; cursor:pointer; transition:all .15s}
+  .ghost-btn:hover{border-color:var(--teal); color:var(--teal-deep)}
+  .ghost-btn.ok{border-color:var(--teal); color:var(--teal-deep); background:#F0FBF9}
+  .sysbar .live{display:inline-flex; align-items:center; gap:7px; color:var(--teal-deep); font-weight:500}
+  .sysbar .live .ld{width:8px;height:8px;border-radius:50%;background:var(--teal); animation:livedot 2s infinite}
+  .sysbar .sep{color:#C7D0DA}
+  @keyframes livedot{0%{box-shadow:0 0 0 0 rgba(0,197,168,.45)}70%{box-shadow:0 0 0 7px rgba(0,197,168,0)}100%{box-shadow:0 0 0 0 rgba(0,197,168,0)}}
+
+  .stage{position:relative; width:100%; min-width:760px; aspect-ratio:1000/600; background:radial-gradient(120% 90% at 50% 0%, #fff 0%, var(--bg) 70%);}
+  .stage svg.edges{position:absolute; inset:0; width:100%; height:100%; overflow:visible}
+  .edge{fill:none; stroke:#D4DBE4; stroke-width:1.4; transition:stroke .25s, stroke-width .25s; stroke-linecap:round}
+  .edge.off{display:none}
+  .edge.active{stroke:var(--teal); stroke-width:2.2}
+  .pulse{fill:var(--teal); filter:drop-shadow(0 0 5px rgba(0,197,168,.6)); opacity:0}
+  .mote{fill:#7FD8C9; opacity:0}
+
+  .node{position:absolute; transform:translate(-50%,-50%); width:158px; min-height:62px; background:var(--surface); border:1px solid var(--hair); border-radius:12px; padding:11px 13px; box-shadow:var(--shadow); cursor:pointer; text-align:left; font-family:inherit; transition:border-color .2s, box-shadow .2s, transform .2s, opacity .2s;}
+  .node:hover{border-color:#C2CCD8; transform:translate(-50%,-50%) translateY(-1px)}
+  .node.dim{opacity:.34; filter:grayscale(.5)}
+  .node.active{border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,197,168,.18), var(--shadow)}
+  .node .n-top{display:flex; align-items:center; gap:8px}
+  .node .glyph{width:22px; height:22px; border-radius:6px; flex:none; display:grid; place-items:center; font-family:"JetBrains Mono",monospace; font-size:10px; font-weight:500; color:#fff; background:var(--navy);}
+  .node.out .glyph{background:var(--teal-deep)}
+  .node .n-name{font-weight:600; font-size:13.5px; line-height:1.2}
+  .node .n-role{font-size:11.5px; color:var(--muted); margin-top:5px; line-height:1.35}
+  .node .stat-tag{position:absolute; top:-9px; right:10px; font-family:"JetBrains Mono",monospace; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:#fff; background:var(--gold); padding:2px 6px; border-radius:5px;}
+  .conn-dot{position:absolute; top:50%; width:8px; height:8px; border-radius:50%; background:var(--teal); transform:translateY(-50%); animation:conn 2.4s ease-in-out infinite}
+  .node.in .conn-dot{right:-4px}
+  .node.out .conn-dot{left:-4px}
+  .node.dim .conn-dot{background:#C2CCD8; animation:none; opacity:.5}
+  @keyframes conn{0%,100%{opacity:.4; transform:translateY(-50%) scale(.8)}50%{opacity:1; transform:translateY(-50%) scale(1.15)}}
+  .col-label{position:absolute; transform:translateX(-50%); font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#A7B4C2}
+
+  .hub{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:256px; background:linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%); border-radius:16px; padding:16px 16px 14px; color:#fff; box-shadow:0 10px 30px rgba(46,63,87,.28); border:1px solid rgba(255,255,255,.06);}
+  .hub::before{content:""; position:absolute; inset:-1px; border-radius:16px; background:radial-gradient(62% 52% at 50% 28%, rgba(0,197,168,.14), transparent 70%); opacity:.3; animation:corebreath 4.6s ease-in-out infinite; pointer-events:none}
+  @keyframes corebreath{0%,100%{opacity:.22}50%{opacity:.5}}
+  .hub-ripple{position:absolute; left:50%; top:42%; width:24px; height:24px; border-radius:50%; border:1.5px solid var(--teal); transform:translate(-50%,-50%) scale(.4); opacity:0; pointer-events:none}
+  .hub-ripple.go{animation:ripple 900ms ease-out}
+  @keyframes ripple{0%{opacity:.5; transform:translate(-50%,-50%) scale(.4)}100%{opacity:0; transform:translate(-50%,-50%) scale(3.6)}}
+  .hub .h-eyebrow{position:relative; font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#9FE7DB}
+  .hub .h-title{position:relative; font-weight:700; font-size:16px; margin-top:5px; letter-spacing:-.01em}
+  .hub .h-sub{position:relative; font-size:11.5px; color:#B9C6D6; margin-top:3px; min-height:16px}
+  .facets{position:relative; display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:13px}
+  .facet{display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:9px; padding:8px 9px; transition:background .25s, border-color .25s, box-shadow .25s, transform .25s;}
+  .facet .f-k{flex-basis:100%; font-family:"JetBrains Mono",monospace; font-size:8.5px; letter-spacing:.1em; color:#7FD8C9; text-transform:uppercase}
+  .facet .f-name{font-size:11.5px; font-weight:500; flex:1}
+  .facet .f-count{font-family:"JetBrains Mono",monospace; font-size:13px; font-weight:600; color:#fff}
+  .facet .f-count .flag{color:var(--warning); font-size:9px; margin-left:3px}
+  .facet.glow{background:rgba(0,197,168,.18); border-color:var(--teal); box-shadow:0 0 0 2px rgba(0,197,168,.25)}
+  .facet.bump{transform:scale(1.04)}
+  .ai-bar{position:relative; margin-top:12px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px; font-size:10.8px; color:#C2CEDC; display:flex; gap:8px; align-items:center; line-height:1.35}
+  .ai-bar .k{font-family:"JetBrains Mono",monospace; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#7FD8C9; border:1px solid rgba(127,216,201,.4); border-radius:4px; padding:2px 6px; flex:none}
+
+  .rail{border-left:1px solid var(--hair); background:var(--surface); padding:22px 20px; display:flex; flex-direction:column; min-height:100%}
+  .rail h2{font-size:13px; font-family:"JetBrains Mono",monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 4px; display:flex; align-items:center; gap:8px}
+  .rail h2 .pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--teal); animation:conn 2s ease-in-out infinite}
+  .ticker{margin-top:14px; display:flex; flex-direction:column; gap:11px; flex:1; max-height:62vh; overflow-y:auto}
+  .tick{display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.5; color:var(--ink); opacity:0; transform:translateY(4px); animation:tickin .35s ease forwards;}
+  @keyframes tickin{to{opacity:1; transform:none}}
+  .tick .dot{margin-top:6px; width:7px; height:7px; border-radius:50%; background:var(--teal); flex:none}
+  .tick .num{font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--muted); margin-top:1px; flex:none; width:18px}
+  .tick.card-tick .card-slot{flex:1; min-width:0}
+  .tick.feed .lt{font-family:"JetBrains Mono",monospace; font-size:9.5px; color:#A7B4C2; width:auto; margin-top:2px}
+  .tick.feed .ft{color:#52677e; font-size:12.5px}
+  .rail .empty{color:var(--muted); font-size:13px; line-height:1.55; margin-top:14px}
+  .rail .empty strong{color:var(--ink); font-weight:600}
+  .feed-hint{margin-top:14px; font-size:11.5px; color:#9aa8b8; line-height:1.5}
+
+  .ai-card{border:1px solid #CFEEE8; background:#F4FBFA; border-left:3px solid var(--teal); border-radius:10px; padding:11px 12px}
+  .ai-card .card-head{display:flex; align-items:center; gap:8px; font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal-deep)}
+  .ai-mark{width:18px; height:18px; border-radius:5px; background:var(--teal); color:#06241f; font-weight:600; font-size:9px; display:grid; place-items:center; font-family:"JetBrains Mono",monospace; flex:none}
+  .reason-list{margin:9px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px}
+  .reason-list li{font-size:12.5px; color:var(--ink); padding-left:16px; position:relative; line-height:1.4; opacity:0; animation:tickin .3s ease forwards}
+  .reason-list li:before{content:"\2192"; position:absolute; left:0; color:var(--teal-deep); font-family:"JetBrains Mono",monospace; font-size:11px}
+  .recommend{margin-top:10px; font-size:12.5px; line-height:1.45}
+  .recommend .rk{display:block; font-family:"JetBrains Mono",monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:2px}
+  .decide-row{display:flex; align-items:center; gap:8px; margin-top:11px; flex-wrap:wrap}
+  .decide-row .dk{font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  .decide-btn{font-family:inherit; font-size:12px; padding:5px 12px; border-radius:7px; border:1px solid var(--hair); background:#fff; color:var(--ink); cursor:pointer; transition:filter .15s, background .15s}
+  .decide-btn:hover{border-color:#C9D2DD}
+  .decide-btn.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .decided-stamp{font-size:12px; color:var(--teal-deep); font-weight:600}
+  .decided-stamp.review{color:var(--muted)}
+
+  .action-card{border:1px solid var(--hair); border-radius:10px; background:#fff; padding:11px 12px; box-shadow:var(--shadow)}
+  .action-card .card-head{display:flex; justify-content:space-between; align-items:center; gap:8px; font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--navy)}
+  .action-card .a-title{font-weight:600; font-size:13.5px; margin-top:4px; line-height:1.3}
+  .map-row{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+  .map-k{font-family:"JetBrains Mono",monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-right:2px}
+  .prod-chip{font-size:11.5px; background:var(--soft); border:1px solid var(--hair); border-radius:6px; padding:3px 8px; color:var(--ink)}
+  .prod-chip .sku{font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--muted); margin-left:6px}
+  .a-meta{margin-top:9px; font-size:11.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap}
+  .a-meta b{color:var(--ink); font-weight:500}
+  .status-badge{font-family:"JetBrains Mono",monospace; font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-radius:5px; border:1px solid; white-space:nowrap}
+  .status-badge.is-proposed{color:#9a6a14; border-color:#EAD3A8; background:#FBF3E6}
+  .status-badge.is-approved{color:var(--teal-deep); border-color:#CFEEE8; background:#F0FBF9}
+  .status-badge.is-review{color:var(--muted); border-color:var(--hair); background:var(--soft)}
+
+  .note{padding:14px clamp(16px,4vw,40px); border-top:1px solid var(--hair); background:var(--surface); display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .note .pill{font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--navy); border:1px solid var(--hair); border-radius:6px; padding:4px 8px}
+  .note p{margin:0; font-size:12.5px; color:var(--muted); max-width:70ch}
+
+  .tour-overlay{position:fixed; inset:0; z-index:60; display:none}
+  .tour-overlay.on{display:block}
+  .tour-spot{position:absolute; border-radius:13px; box-shadow:0 0 0 9999px rgba(20,28,40,.58); border:2px solid var(--teal); transition:all .35s ease; pointer-events:none}
+  .tour-spot.center{box-shadow:0 0 0 9999px rgba(20,28,40,.62); border:none}
+  .tour-card{position:absolute; z-index:61; width:300px; max-width:88vw; background:#fff; border:1px solid var(--hair); border-radius:12px; padding:16px 16px 14px; box-shadow:0 18px 50px rgba(26,36,51,.28)}
+  .tour-card .tc-eyebrow{font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--teal-deep)}
+  .tour-card h3{margin:7px 0 6px; font-size:15.5px; color:var(--ink); letter-spacing:-.01em}
+  .tour-card p{margin:0; font-size:13px; color:var(--muted); line-height:1.5}
+  .tour-card .tc-foot{display:flex; align-items:center; justify-content:space-between; margin-top:14px; gap:10px}
+  .tc-steps{font-family:"JetBrains Mono",monospace; font-size:11px; color:#A7B4C2}
+  .tc-btns{display:flex; gap:8px}
+  .tc-btn{appearance:none; font-family:inherit; font-size:12.5px; padding:6px 13px; border-radius:7px; border:1px solid var(--hair); background:#fff; color:var(--ink); cursor:pointer; transition:all .15s}
+  .tc-btn:hover{border-color:#C9D2DD}
+  .tc-btn.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .tc-skip{position:absolute; top:13px; right:14px; appearance:none; border:none; background:none; color:#A7B4C2; font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer}
+  .tc-skip:hover{color:var(--muted)}
+  .tc-btn:focus-visible, .tc-skip:focus-visible, .ghost-btn:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+  @media (max-width:900px){
+    .work{grid-template-columns:1fr}
+    .rail{border-left:none; border-top:1px solid var(--hair)}
+    .ticker{max-height:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .pulse,.mote{display:none}
+    .tick,.reason-list li{animation:none; opacity:1; transform:none}
+    .node,.edge,.facet{transition:none}
+    .conn-dot,.hub::before,.sysbar .live .ld,.rail h2 .pulse-dot{animation:none}
+    .tour-spot{transition:none}
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div>
+    <div class="wordmark">SMED<span class="dot">·</span>TEC</div>
+    <div class="desc">Connected Compliance — your tools, your suppliers and your evidence, wired into one live layer that reasons but never decides for you.</div>
+  </div>
+  <div class="right">Interactive walkthrough<br/>Built around your stack</div>
+</header>
+
+<section class="controls" aria-label="Controls">
+  <div class="ctl-group">
+    <span class="ctl-label">Run a flow</span>
+    <div class="chips" id="scenarios" role="group" aria-label="Choose a flow"></div>
+  </div>
+  <div class="ctl-group">
+    <span class="ctl-label">&nbsp;</span>
+    <button class="play" id="play"><span class="tri"></span><span id="play-label">Play</span></button>
+  </div>
+  <div class="ctl-group" style="flex:1">
+    <span class="ctl-label">Your stack — switch tools on or off</span>
+    <div class="stack" id="stack"></div>
+  </div>
+  <div class="ctl-group">
+    <span class="ctl-label">Connected for</span>
+    <input class="name-input" id="company" type="text" placeholder="Your company" maxlength="28" aria-label="Company name" />
+  </div>
+</section>
+
+<div class="work">
+  <div class="canvas-wrap">
+    <div class="sysbar">
+      <div class="sb-left">
+        <span class="live"><span class="ld"></span>Live</span>
+        <span class="sep">·</span><span id="sb-monitor">monitoring 14 products across 4 markets</span>
+        <span class="sep">·</span><span id="sb-sync">last sync just now</span>
+      </div>
+      <div class="sb-right">
+        <button class="ghost-btn" id="btn-tour" type="button">Take the tour</button>
+        <button class="ghost-btn" id="btn-share" type="button">Copy share link</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <svg class="edges" id="edges" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="col-label" style="left:15%; top:2%">Inputs</div>
+      <div class="col-label" style="left:85%; top:2%">Where work lands</div>
+      <div class="hub" id="hub">
+        <span class="hub-ripple" id="hub-ripple"></span>
+        <div class="h-eyebrow">Your compliance layer</div>
+        <div class="h-title">SMEDTEC Studio</div>
+        <div class="h-sub" id="hub-sub">Owned by you. Wired to the tools below.</div>
+        <div class="facets">
+          <div class="facet" id="f-products"><span class="f-k">01</span><span class="f-name">Products</span><span class="f-count" data-final="14">0</span></div>
+          <div class="facet" id="f-claims"><span class="f-k">02</span><span class="f-name">Claims</span><span class="f-count" data-final="23" data-flag="2">0</span></div>
+          <div class="facet" id="f-suppliers"><span class="f-k">03</span><span class="f-name">Suppliers</span><span class="f-count" data-final="3">0</span></div>
+          <div class="facet" id="f-tasks"><span class="f-k">04</span><span class="f-name">Tasks</span><span class="f-count" data-final="5">0</span></div>
+        </div>
+        <div class="ai-bar"><span class="k">AI</span><span>Reasons over your evidence and drafts the action. Every decision stays with you.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="rail" aria-live="polite">
+    <h2 id="rail-title"><span class="pulse-dot"></span>Live activity</h2>
+    <div id="rail-body"></div>
+  </aside>
+</div>
+
+<div class="tour-overlay" id="tour" aria-hidden="true">
+  <div class="tour-spot" id="tour-spot"></div>
+  <div class="tour-card" id="tour-card" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="note">
+  <span class="pill">Visualisation only</span>
+  <span class="pill">AI reasons · you decide</span>
+  <p>A real build wires to your actual tools and suppliers — nothing here is templated. The AI surfaces what's affected and drafts each action; approving it is always yours.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NODES = [
+    {id:"sup",  side:"in",  x:150, y:120, glyph:"SUP", name:"Suppliers / OEM", role:"Specs, certificates, test reports",
+      flowIn:"Conformity certificates, bills of materials and declarations from each manufacturer.",
+      flowOut:"Requests for missing documents, and the current status of everything you've asked for.",
+      owned:"Their documents live in your system, version-stamped and searchable."},
+    {id:"lab",  side:"in",  x:150, y:255, glyph:"LAB", name:"Test labs", role:"Biocompatibility, SPF, safety reports",
+      flowIn:"Test reports as they're issued, matched to the product and claim they support.",
+      flowOut:"What still needs testing, and which reports are close to expiry.",
+      owned:"Every report is tied to the claim it backs, so evidence gaps are visible at a glance."},
+    {id:"pim",  side:"in",  x:150, y:390, glyph:"PIM", name:"Commerce / PIM", role:"Products, SKUs, markets",
+      flowIn:"Your product catalogue, variants and the markets each one sells into.",
+      flowOut:"Compliance status per SKU, so a product can't quietly ship somewhere it isn't cleared.",
+      owned:"One product list, shared with the system rather than re-keyed into it."},
+    {id:"reg",  side:"in",  x:150, y:520, glyph:"REG", name:"Rule changes", role:"Regulation updates by market", stat:"Statutory",
+      flowIn:"Changes to the rules in each market you sell into, drawn from regulatory sources.",
+      flowOut:"Which of your products and claims a change actually touches.",
+      owned:"You see a rule change as a short list of affected SKUs, not a 40-page bulletin."},
+    {id:"slack", side:"out", x:850, y:120, glyph:"MSG", name:"Slack", role:"Alerts and approvals",
+      flowIn:"Approvals and replies from your team, fed back against the right item.",
+      flowOut:"Short, specific alerts: a certificate expiring, a claim now unsupported.",
+      owned:"Alerts land where your team already works, not in a tool they have to remember to open."},
+    {id:"tasks", side:"out", x:850, y:255, glyph:"TSK", name:"Project tool", role:"Tasks and owners",
+      flowIn:"When a task is completed, the system marks the underlying item resolved.",
+      flowOut:"Tasks with a named owner whenever something needs doing, with the context attached.",
+      owned:"Work shows up in your existing board — ClickUp, Monday, Asana — not a separate to-do list."},
+    {id:"data", side:"out", x:850, y:390, glyph:"REG2", name:"Your registers", role:"Airtable / Excel",
+      flowIn:"The spreadsheets and tables you already keep, read in rather than replaced.",
+      flowOut:"A clean, current copy of each register, written back so your records stay in sync.",
+      owned:"Your existing way of working is connected, not thrown away."},
+    {id:"email", side:"out", x:850, y:520, glyph:"@", name:"Email", role:"External comms",
+      flowIn:"Replies from suppliers and partners, logged against the request that prompted them.",
+      flowOut:"Document requests and chasers to suppliers, sent and tracked.",
+      owned:"Every external request has a trail, so nothing depends on one person's inbox."}
+  ];
+
+  var EDGES = [
+    {id:"e-sup",node:"sup",dir:"in"},{id:"e-lab",node:"lab",dir:"in"},{id:"e-pim",node:"pim",dir:"in"},{id:"e-reg",node:"reg",dir:"in"},
+    {id:"e-slack",node:"slack",dir:"out"},{id:"e-tasks",node:"tasks",dir:"out"},{id:"e-data",node:"data",dir:"out"},{id:"e-email",node:"email",dir:"out"}
+  ];
+  var HUB = {cx:500, cy:300, left:380, right:620, halfH:78};
+
+  var SCENARIOS = [
+    {id:"report", label:"Supplier test report arrives", steps:[
+      {edge:"e-sup", facet:"f-suppliers", text:"A supplier uploads a new test report. Studio takes it in and files it against the right product."},
+      {facet:"f-claims", text:"It matches the report to the claim it supports and checks that claim is backed by valid, in-date evidence."},
+      {facet:"f-claims", ai:{id:"r1", reason:["This report supplies the stability data the 'brightens skin tone' claim relies on.","A separate biocompatibility certificate for the same product expires in 21 days.","Nothing here is wrong, but one piece of supporting evidence is about to lapse."], recommend:"Renew the expiring certificate before it affects the product's status."}},
+      {facet:"f-tasks", edge:"e-tasks", action:{id:"ra1", linked:"r1", title:"Renew expiring certificate", product:"Radiance Vitamin C Serum", sku:"SKN-014", claim:"Brightens and evens skin tone", owner:"Regulatory", lands:"Project tool", status:"Awaiting your approval"}},
+      {edge:"e-slack", text:"A short alert goes to your channel so the renewal doesn't wait on someone noticing."}
+    ]},
+    {id:"claim", label:"You add a product claim", steps:[
+      {facet:"f-claims", text:"You add a new claim to a product: 'suitable for sensitive skin'."},
+      {facet:"f-claims", ai:{id:"c1", reason:["A 'sensitive skin' claim is best supported by human repeat-insult patch test (HRIPT) data.","The product has a current safety assessment, but no irritation study on file.","So the claim is plausible, but not yet substantiated by the evidence held."], recommend:"Hold the claim until irritation data is in, and request the test."}},
+      {facet:"f-suppliers", edge:"e-email", action:{id:"ca1", linked:"c1", title:"Hold claim, request irritation test", product:"Calm Sensitive Moisturiser", sku:"SKN-022", claim:"Suitable for sensitive skin", owner:"Regulatory", lands:"Email", status:"Awaiting your approval"}},
+      {facet:"f-products", text:"Until you approve and the data lands, the claim stays off the live product. The range only says what it can prove."}
+    ]},
+    {id:"rule", label:"A market changes its rules", steps:[
+      {edge:"e-reg", facet:"f-products", text:"A market updates its requirements. Studio reads the change and finds every SKU it touches."},
+      {facet:"f-claims", text:"It checks which claims and evidence are affected, and which now fall short."},
+      {facet:"f-tasks", edge:"e-tasks", action:{id:"ru1", title:"Re-label affected SKUs to the new limit", product:"Daily SPF 30 Fluid", sku:"SKN-031", claim:"SPF 30 broad spectrum", owner:"Product", lands:"Project tool", status:"Awaiting your approval"}},
+      {edge:"e-data", text:"Your registers update to match the new rule, not the old one."},
+      {edge:"e-slack", text:"And one alert tells the team what changed and what it means for you."}
+    ]},
+    {id:"market", label:"Product enters a new market", steps:[
+      {edge:"e-pim", facet:"f-products", text:"A SKU is set to launch in a new market. Studio maps that market's requirements to the product."},
+      {facet:"f-claims", text:"It checks which evidence transfers across and what's specific to the new market."},
+      {facet:"f-suppliers", ai:{id:"m1", reason:["The product's existing test pack already covers the EU and UK requirements.","The new market also needs a local responsible-person declaration and an ingredient registration.","The hardware is unchanged, so most evidence carries over: only the local paperwork is missing."], recommend:"Carry the existing evidence across; request only the two market-specific documents."}},
+      {facet:"f-suppliers", edge:"e-sup", action:{id:"ma1", linked:"m1", title:"Request local declarations for launch", product:"Micro-Roller", sku:"DEV-007", claim:"Enhances serum absorption", owner:"Regulatory", lands:"Suppliers / OEM", status:"Awaiting your approval"}}
+    ]},
+    {id:"adverse", label:"A customer reports a reaction", steps:[
+      {edge:"e-email", facet:"f-products", reverse:true, text:"A customer reaction is reported through support. Studio logs it against the exact product and batch."},
+      {facet:"f-claims", ai:{id:"v1", reason:["This is the first report for this product in 90 days, so not yet a trend.","The reaction described is mild and transient, not a serious undesirable effect.","Under cosmetic vigilance a serious effect would be reportable; on current information, this is not.","But a second similar report would change that picture."], recommend:"Record and monitor, and set a threshold to re-flag if a second similar report arrives. Whether something is reportable is a regulated judgement, so it stays your call."}},
+      {facet:"f-tasks", edge:"e-data", action:{id:"va1", linked:"v1", title:"Record in vigilance log, set monitoring threshold", product:"Calm Sensitive Moisturiser", sku:"SKN-022", claim:"\u2014", owner:"Quality", lands:"Your registers", status:"Awaiting your approval"}},
+      {edge:"e-slack", text:"The decision and its reasoning are recorded against the product, so the trail is there if a regulator ever asks."}
+    ]},
+    {id:"retailer", label:"A retailer requests your pack", steps:[
+      {edge:"e-email", facet:"f-products", reverse:true, text:"A retailer asks for your compliance pack before listing a product. Studio pulls the request in."},
+      {facet:"f-claims", text:"It assembles the pack from evidence already held: safety assessment, test reports, declarations."},
+      {facet:"f-claims", ai:{id:"t1", reason:["The safety assessment, ingredient list and stability data are present and current.","The latest batch test certificate is missing from the file.","The pack is most of the way there; sending it now would mean a follow-up and a delay."], recommend:"Request the one missing certificate from the supplier, then release the complete pack."}},
+      {facet:"f-suppliers", edge:"e-sup", action:{id:"ta1", linked:"t1", title:"Request missing certificate, then release pack", product:"Recover TENS Device", sku:"THR-003", claim:"Relieves muscle pain", owner:"Regulatory", lands:"Suppliers / OEM", status:"Awaiting your approval"}},
+      {edge:"e-tasks", text:"A task tracks the gap so the pack goes out complete, not piecemeal."}
+    ]}
+  ];
+
+  var FEED_LINES = [
+    "CPSR on file \u00b7 SKN-022 \u00b7 safety assessment current",
+    "MoCRA product listing confirmed \u00b7 SKN-014 \u00b7 US",
+    "UK SCPN notification verified \u00b7 SKN-031",
+    "EU CPNP notification verified \u00b7 SKN-014",
+    "UKCA technical file updated \u00b7 THR-003",
+    "510(k) status current \u00b7 THR-003 \u00b7 US",
+    "Annex III screen passed \u00b7 no restricted actives \u00b7 SKN-031",
+    "INCI / ingredient check \u00b7 SKN-022 \u00b7 all permitted",
+    "ISO 13485 audit action closed \u00b7 OEM-1",
+    "Batch test certificate received \u00b7 OEM-1 \u00b7 THR-003",
+    "SPF test renewed \u00b7 SKN-031 \u00b7 ISO 24444",
+    "Stability data within shelf life \u00b7 12 SKUs",
+    "Responsible Person details current \u00b7 EU & UK",
+    "TGA listing check \u00b7 DEV-007 \u00b7 AU",
+    "Claim substantiation reviewed \u00b7 \u0027brightens\u0027 evidenced \u00b7 SKN-014",
+    "Vigilance log \u00b7 0 serious undesirable effects this quarter",
+    "Rule monitor \u00b7 no changes across UK, EU, US or AU today",
+    "Evidence check passed \u00b7 11 SKUs cleared for EU",
+    "Posture recalculated \u00b7 14 products in sync",
+    "Supplier declaration requested \u00b7 awaiting reply"
+  ];
+
+  var BASE_COUNTS = {products:14, claims:23, claimsFlag:2, suppliers:3, tasks:5};
+  var state = { company:"", enabled:{}, scenario:"report", playing:false, token:0, railMode:"ambient", sync:0, counts:Object.assign({},BASE_COUNTS), lastFeed:-1 };
+  NODES.forEach(function(n){ state.enabled[n.id] = true; });
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var stage = document.getElementById("stage");
+  var svg = document.getElementById("edges");
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var nodeEls = {}, edgeEls = {};
+
+  function pct(v,total){ return v/total*100; }
+  function nodeById(id){ for(var i=0;i<NODES.length;i++){ if(NODES[i].id===id) return NODES[i]; } return null; }
+  function edgeMeta(id){ for(var i=0;i<EDGES.length;i++){ if(EDGES[i].id===id) return EDGES[i]; } return null; }
+  function nodeAnchor(n){ var hw=86; return n.side==="in" ? {x:n.x+hw,y:n.y} : {x:n.x-hw,y:n.y}; }
+  function hubAnchor(side,y){ var hy=Math.max(HUB.cy-HUB.halfH+12, Math.min(HUB.cy+HUB.halfH-12,y)); return side==="in"?{x:HUB.left,y:hy}:{x:HUB.right,y:hy}; }
+
+  function buildNodes(){
+    NODES.forEach(function(n){
+      var el=document.createElement("button");
+      el.className="node "+n.side;
+      el.style.left=pct(n.x,1000)+"%"; el.style.top=pct(n.y,600)+"%";
+      el.setAttribute("data-node",n.id);
+      el.setAttribute("aria-label",n.name+" \u2014 "+n.role);
+      el.innerHTML=(n.stat?'<span class="stat-tag">'+n.stat+'</span>':'')+
+        '<span class="conn-dot"></span>'+
+        '<div class="n-top"><span class="glyph">'+n.glyph+'</span><span class="n-name">'+n.name+'</span></div>'+
+        '<div class="n-role">'+n.role+'</div>';
+      stage.appendChild(el); nodeEls[n.id]=el;
+    });
+  }
+  function buildEdges(){
+    EDGES.forEach(function(e){
+      var n=nodeById(e.node), a=nodeAnchor(n), b=hubAnchor(e.dir,n.y);
+      var from=e.dir==="in"?a:b, to=e.dir==="in"?b:a, midx=(from.x+to.x)/2;
+      var d="M"+from.x+","+from.y+" C"+midx+","+from.y+" "+midx+","+to.y+" "+to.x+","+to.y;
+      var path=document.createElementNS(SVGNS,"path");
+      path.setAttribute("d",d); path.setAttribute("class","edge"); path.setAttribute("id",e.id);
+      svg.appendChild(path); edgeEls[e.id]={path:path};
+    });
+  }
+  function buildScenarioChips(){
+    var wrap=document.getElementById("scenarios");
+    SCENARIOS.forEach(function(s){
+      var b=document.createElement("button"); b.className="chip"; b.textContent=s.label;
+      b.setAttribute("data-scenario",s.id); b.setAttribute("aria-pressed",s.id===state.scenario?"true":"false");
+      wrap.appendChild(b);
+    });
+  }
+  function buildStackToggles(){
+    var wrap=document.getElementById("stack");
+    NODES.forEach(function(n){
+      var b=document.createElement("button"); b.className="stack-toggle"; b.textContent=n.name;
+      b.setAttribute("data-toggle",n.id); b.setAttribute("aria-pressed","true");
+      wrap.appendChild(b);
+    });
+  }
+  function applyEnabled(){
+    NODES.forEach(function(n){ nodeEls[n.id].classList.toggle("dim",!state.enabled[n.id]); });
+    EDGES.forEach(function(e){ edgeEls[e.id].path.classList.toggle("off",!state.enabled[e.node]); });
+  }
+  function setScenario(id){
+    state.scenario=id;
+    document.querySelectorAll("#scenarios .chip").forEach(function(c){ c.setAttribute("aria-pressed",c.getAttribute("data-scenario")===id?"true":"false"); });
+  }
+
+  function clearFacets(){ ["f-products","f-claims","f-suppliers","f-tasks"].forEach(function(f){ document.getElementById(f).classList.remove("glow"); }); }
+  function clearEdges(){ EDGES.forEach(function(e){ edgeEls[e.id].path.classList.remove("active"); }); }
+  function clearNodes(){ Object.keys(nodeEls).forEach(function(k){ nodeEls[k].classList.remove("active"); }); }
+
+  function renderCounts(){
+    document.querySelector("#f-products .f-count").textContent=state.counts.products;
+    var cl=document.querySelector("#f-claims .f-count"); cl.innerHTML=state.counts.claims+(state.counts.claimsFlag>0?' <span class="flag">'+state.counts.claimsFlag+'\u26a0</span>':'');
+    document.querySelector("#f-suppliers .f-count").textContent=state.counts.suppliers;
+    document.querySelector("#f-tasks .f-count").textContent=state.counts.tasks;
+  }
+  function bump(id){ var el=document.getElementById(id); if(!el) return; el.classList.add("bump"); setTimeout(function(){ el.classList.remove("bump"); },420); }
+  function rippleHub(){ if(reduceMotion) return; var r=document.getElementById("hub-ripple"); r.classList.remove("go"); void r.offsetWidth; r.classList.add("go"); }
+
+  function showDetail(n){
+    if(state.playing) return;
+    state.railMode="detail";
+    document.getElementById("rail-title").innerHTML='<span class="pulse-dot"></span>What flows through';
+    var html='<div style="margin-top:6px">'+
+      '<div class="a-title" style="font-size:15px">'+n.name+'</div>'+
+      '<div class="recommend"><span class="rk">'+(n.side==="in"?"Into Studio":"Out of Studio")+'</span>'+(n.side==="in"?n.flowIn:n.flowOut)+'</div>'+
+      '<div class="recommend"><span class="rk">'+(n.side==="in"?"Back to "+n.name:"Back into Studio")+'</span>'+(n.side==="in"?n.flowOut:n.flowIn)+'</div>'+
+      '<div class="prod-chip" style="display:inline-block;margin-top:10px;border-color:#CFEEE8;background:#F0FBF9;color:#00A089">'+n.owned+'</div>'+
+      '<div class="feed-hint">Press Play to watch this connection carry a real event \u2014 or tap another tile.</div>'+
+      '</div>';
+    document.getElementById("rail-body").innerHTML=html;
+    Object.keys(nodeEls).forEach(function(k){ nodeEls[k].classList.toggle("active",k===n.id); });
+    clearFacets(); clearEdges();
+  }
+
+  function sleep(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+
+  function runPulse(edgeId,token,reverse){
+    return new Promise(function(resolve){
+      var path=edgeEls[edgeId].path; path.classList.add("active");
+      if(reduceMotion){ resolve(); return; }
+      var len=path.getTotalLength();
+      var dot=document.createElementNS(SVGNS,"circle"); dot.setAttribute("r","5"); dot.setAttribute("class","pulse"); dot.style.opacity="1"; svg.appendChild(dot);
+      var dur=760,start=null;
+      function frame(ts){
+        if(token!==state.token){ if(dot.parentNode) svg.removeChild(dot); resolve(); return; }
+        if(start===null) start=ts;
+        var t=Math.min((ts-start)/dur,1), at=reverse?(1-t):t, pt=path.getPointAtLength(len*at);
+        dot.setAttribute("cx",pt.x); dot.setAttribute("cy",pt.y);
+        if(t<1) requestAnimationFrame(frame); else { if(dot.parentNode) svg.removeChild(dot); resolve(); }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function num(i){ return (i<9?"0":"")+(i+1); }
+  function tickHTML(i,text){ return '<div class="tick"><span class="num">'+num(i)+'</span><span class="dot"></span><span>'+text+'</span></div>'; }
+  function aiCardHTML(i,ai){
+    var reasons=ai.reason.map(function(r,k){ return '<li style="animation-delay:'+(k*180)+'ms">'+r+'</li>'; }).join("");
+    return '<div class="tick card-tick"><span class="num">'+num(i)+'</span><div class="card-slot">'+
+      '<div class="ai-card" data-aicard="'+ai.id+'">'+
+      '<div class="card-head"><span class="ai-mark">AI</span>Studio AI \u00b7 reasons, never decides</div>'+
+      '<ul class="reason-list">'+reasons+'</ul>'+
+      '<div class="recommend"><span class="rk">Recommends</span>'+ai.recommend+'</div>'+
+      '<div class="decide-row" data-decide-row="'+ai.id+'"><span class="dk">Your decision</span>'+
+      '<button class="decide-btn primary" data-decide="approve" data-did="'+ai.id+'">Approve</button>'+
+      '<button class="decide-btn" data-decide="review" data-did="'+ai.id+'">Send for review</button>'+
+      '</div></div></div></div>';
+  }
+  function actionCardHTML(i,a){
+    var claimChip=(a.claim&&a.claim!=="\u2014")?'<span class="prod-chip">Claim: '+a.claim+'</span>':'';
+    return '<div class="tick card-tick"><span class="num">'+num(i)+'</span><div class="card-slot">'+
+      '<div class="action-card" data-actcard="'+a.id+'" data-linked="'+(a.linked||"")+'" data-lands="'+a.lands+'">'+
+      '<div class="card-head"><span>Proposed action</span><span class="status-badge is-proposed" data-status>'+a.status+'</span></div>'+
+      '<div class="a-title">'+a.title+'</div>'+
+      '<div class="map-row"><span class="map-k">Mapped to</span><span class="prod-chip">'+a.product+'<span class="sku">'+a.sku+'</span></span>'+claimChip+'</div>'+
+      '<div class="a-meta"><span><b>Owner</b> '+a.owner+'</span><span><b>Lands in</b> '+a.lands+'</span></div>'+
+      '</div></div></div>';
+  }
+
+  var ticker=null;
+
+  function playScenario(){
+    var token=++state.token;
+    state.playing=true; state.railMode="flow"; setPlayUI(true);
+    state.counts=Object.assign({},BASE_COUNTS); renderCounts();
+    clearFacets(); clearEdges(); clearNodes();
+    document.getElementById("rail-title").innerHTML='<span class="pulse-dot"></span>The flow';
+    var body=document.getElementById("rail-body");
+    ticker=document.createElement("div"); ticker.className="ticker"; body.innerHTML=""; body.appendChild(ticker);
+
+    var sc=SCENARIOS.filter(function(s){return s.id===state.scenario;})[0];
+    var steps=sc.steps.filter(function(st){ if(st.action) return true; if(!st.edge) return true; return state.enabled[edgeMeta(st.edge).node]; });
+
+    var i=0;
+    function next(){
+      if(token!==state.token) return;
+      if(i>=steps.length){ finish(token); return; }
+      var st=steps[i];
+      clearEdges(); clearNodes();
+      if(st.facet){ clearFacets(); document.getElementById(st.facet).classList.add("glow"); rippleHub(); }
+      resetSync();
+      var pulseP;
+      if(st.ai){
+        ticker.insertAdjacentHTML("beforeend",aiCardHTML(i,st.ai));
+        pulseP=sleep(reduceMotion?700:1300);
+      } else if(st.action){
+        var em=st.edge?edgeMeta(st.edge):null;
+        if(em&&state.enabled[em.node]) nodeEls[em.node].classList.add("active");
+        ticker.insertAdjacentHTML("beforeend",actionCardHTML(i,st.action));
+        state.counts.tasks+=1; renderCounts(); bump("f-tasks");
+        pulseP=(em&&state.enabled[em.node])?runPulse(st.edge,token,st.reverse):sleep(reduceMotion?600:760);
+      } else {
+        if(st.edge&&state.enabled[edgeMeta(st.edge).node]) nodeEls[edgeMeta(st.edge).node].classList.add("active");
+        ticker.insertAdjacentHTML("beforeend",tickHTML(i,st.text));
+        pulseP=st.edge?runPulse(st.edge,token,st.reverse):sleep(reduceMotion?500:680);
+      }
+      ticker.scrollTop=ticker.scrollHeight;
+      pulseP.then(function(){ if(token!==state.token) return; i++; setTimeout(next,240); });
+    }
+    next();
+  }
+
+  function finish(token){
+    if(token!==state.token) return;
+    state.playing=false; setPlayUI(false); clearEdges();
+    setTimeout(function(){ if(token===state.token){ clearFacets(); clearNodes(); startAmbient(); } },1400);
+  }
+  function stopScenario(){ state.token++; state.playing=false; setPlayUI(false); clearEdges(); clearNodes(); clearFacets(); startAmbient(); }
+  function setPlayUI(playing){
+    var btn=document.getElementById("play"), label=document.getElementById("play-label");
+    if(playing){ btn.classList.add("is-stop"); label.textContent="Stop"; } else { btn.classList.remove("is-stop"); label.textContent="Play"; }
+  }
+
+  function decide(did,choice){
+    var aicard=document.querySelector('[data-aicard="'+did+'"]');
+    if(aicard){
+      var row=aicard.querySelector('[data-decide-row]');
+      if(row) row.innerHTML='<span class="dk">Your decision</span><span class="decided-stamp'+(choice==="review"?" review":"")+'">'+(choice==="approve"?"Approved by you":"Sent for review by you")+'</span>';
+    }
+    var act=document.querySelector('[data-linked="'+did+'"]');
+    if(act){
+      var badge=act.querySelector('[data-status]');
+      if(badge){
+        if(choice==="approve"){ badge.className="status-badge is-approved"; badge.textContent="Approved \u00b7 sent to "+(act.getAttribute("data-lands")||"your tools"); state.counts.tasks=Math.max(0,state.counts.tasks-1); renderCounts(); bump("f-tasks"); }
+        else { badge.className="status-badge is-review"; badge.textContent="Held for review"; }
+      }
+    }
+  }
+
+  function applyCompany(){
+    var sub=document.getElementById("hub-sub"), mon=document.getElementById("sb-monitor");
+    if(state.company&&state.company.trim()){
+      sub.textContent="Built for "+state.company.trim()+". Owned by you.";
+      mon.textContent="monitoring "+state.company.trim()+"'s 14 products across 4 markets";
+    } else {
+      sub.textContent="Owned by you. Wired to the tools below.";
+      mon.textContent="monitoring 14 products across 4 markets";
+    }
+  }
+
+  /* ---- ambient life ---- */
+  function startAmbient(){
+    state.railMode="ambient";
+    document.getElementById("rail-title").innerHTML='<span class="pulse-dot"></span>Live activity';
+    var body=document.getElementById("rail-body");
+    ticker=document.createElement("div"); ticker.className="ticker"; body.innerHTML="";
+    var hint=document.createElement("p"); hint.className="feed-hint";
+    hint.textContent="Your systems stay in sync in the background. Press Play above to watch a real event move through them, or tap any tile.";
+    body.appendChild(ticker); body.appendChild(hint);
+    var seed=[2,5,0,8].map(function(k){return FEED_LINES[k];});
+    seed.forEach(function(line){ ticker.insertAdjacentHTML("afterbegin",feedHTML(line)); });
+  }
+  function feedHTML(line){ return '<div class="tick feed"><span class="num lt">live</span><span class="dot" style="background:#9FD8CD"></span><span class="ft">'+line+'</span></div>'; }
+  function addFeedLine(){
+    if(state.railMode!=="ambient"||state.playing||!ticker) return;
+    var idx; do{ idx=Math.floor(Math.random()*FEED_LINES.length); }while(idx===state.lastFeed); state.lastFeed=idx;
+    ticker.insertAdjacentHTML("afterbegin",feedHTML(FEED_LINES[idx]));
+    while(ticker.children.length>7) ticker.removeChild(ticker.lastChild);
+    resetSync();
+  }
+  function ambientMote(){
+    if(reduceMotion||state.railMode!=="ambient"||state.playing) return;
+    var live=EDGES.filter(function(e){return state.enabled[e.node];});
+    if(!live.length) return;
+    var e=live[Math.floor(Math.random()*live.length)];
+    var path=edgeEls[e.id].path, len=path.getTotalLength();
+    var dot=document.createElementNS(SVGNS,"circle"); dot.setAttribute("r","3.2"); dot.setAttribute("class","mote"); svg.appendChild(dot);
+    var dur=1500,start=null, rev=(e.dir==="out");
+    function frame(ts){
+      if(state.playing){ if(dot.parentNode) svg.removeChild(dot); return; }
+      if(start===null) start=ts;
+      var t=Math.min((ts-start)/dur,1), at=rev?(1-t):t, pt=path.getPointAtLength(len*at);
+      dot.setAttribute("cx",pt.x); dot.setAttribute("cy",pt.y);
+      dot.style.opacity=String(0.42*Math.sin(Math.PI*t));
+      if(t<1) requestAnimationFrame(frame); else { if(dot.parentNode) svg.removeChild(dot); }
+    }
+    requestAnimationFrame(frame);
+  }
+  function resetSync(){ state.sync=0; document.getElementById("sb-sync").textContent="last sync just now"; }
+  function tickSync(){ state.sync+=1; var t=state.sync; document.getElementById("sb-sync").textContent="last sync "+(t<=1?"just now":t+"s ago"); }
+
+  /* ---- load sequence ---- */
+  function countUp(){
+    document.querySelectorAll(".facet .f-count").forEach(function(el){
+      var fin=parseInt(el.getAttribute("data-final"),10), flag=el.getAttribute("data-flag");
+      if(reduceMotion){ el.innerHTML=fin+(flag?' <span class="flag">'+flag+'\u26a0</span>':''); return; }
+      var v=0, steps=Math.max(1,fin), inc=Math.ceil(fin/18), iv=setInterval(function(){
+        v+=inc; if(v>=fin){ v=fin; clearInterval(iv); el.innerHTML=fin+(flag?' <span class="flag">'+flag+'\u26a0</span>':''); }
+        else el.textContent=v;
+      },32);
+    });
+  }
+  function drawIn(done){
+    if(reduceMotion){ done(); return; }
+    EDGES.forEach(function(e,k){
+      var p=edgeEls[e.id].path, len=p.getTotalLength();
+      p.style.transition="none"; p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+      void p.getBBox();
+      setTimeout(function(){ p.style.transition="stroke-dashoffset .6s ease"; p.style.strokeDashoffset="0"; },120+k*85);
+    });
+    setTimeout(function(){
+      EDGES.forEach(function(e){ var p=edgeEls[e.id].path; p.style.transition=""; p.style.strokeDasharray=""; p.style.strokeDashoffset=""; });
+      done();
+    },120+EDGES.length*85+650);
+  }
+
+  document.addEventListener("click",function(e){
+    var t=e.target.closest("[data-scenario],[data-toggle],[data-node],[data-decide],#play");
+    if(!t) return;
+    if(t.id==="play"){ if(state.playing) stopScenario(); else playScenario(); return; }
+    if(t.hasAttribute("data-decide")){ decide(t.getAttribute("data-did"),t.getAttribute("data-decide")); return; }
+    if(t.hasAttribute("data-scenario")){ if(state.playing) stopScenario(); setScenario(t.getAttribute("data-scenario")); persist(); return; }
+    if(t.hasAttribute("data-toggle")){ var id=t.getAttribute("data-toggle"); state.enabled[id]=!state.enabled[id]; t.setAttribute("aria-pressed",state.enabled[id]?"true":"false"); applyEnabled(); persist(); return; }
+    if(t.hasAttribute("data-node")){ showDetail(nodeById(t.getAttribute("data-node"))); return; }
+  });
+  document.addEventListener("mouseover",function(e){
+    var t=e.target.closest("[data-node]"); if(!t||state.playing) return;
+    var n=nodeById(t.getAttribute("data-node")); if(!state.enabled[n.id]) return;
+    var ed=EDGES.filter(function(x){return x.node===n.id;})[0]; if(ed) edgeEls[ed.id].path.classList.add("active");
+  });
+  document.addEventListener("mouseout",function(e){
+    var t=e.target.closest("[data-node]"); if(!t||state.playing) return;
+    var n=nodeById(t.getAttribute("data-node"));
+    var ed=EDGES.filter(function(x){return x.node===n.id;})[0]; if(ed) edgeEls[ed.id].path.classList.remove("active");
+  });
+  document.getElementById("company").addEventListener("input",function(e){ state.company=e.target.value||""; applyCompany(); persist(); });
+
+  /* ---- share + persistence ---- */
+  function persist(){
+    var off = NODES.filter(function(n){return !state.enabled[n.id];}).map(function(n){return n.id;}).join("-");
+    var parts=[];
+    if(state.company && state.company.trim()) parts.push("c="+encodeURIComponent(state.company.trim()));
+    if(off) parts.push("off="+off);
+    if(state.scenario && state.scenario!=="report") parts.push("s="+state.scenario);
+    var hash = parts.length ? "#"+parts.join("&") : "#";
+    try{ history.replaceState(null,"",hash); }catch(e){}
+    try{ localStorage.setItem("smedtec_flow_state", JSON.stringify({c:state.company,off:off,s:state.scenario})); }catch(e){}
+  }
+  function readSaved(){
+    var data=null, h=(location.hash||"").replace(/^#/,"");
+    if(h){
+      data={c:"",off:"",s:"report"};
+      h.split("&").forEach(function(kv){ var p=kv.split("="), k=p[0], v=decodeURIComponent(p[1]||"");
+        if(k==="c") data.c=v; else if(k==="off") data.off=v; else if(k==="s") data.s=v; });
+    } else { try{ var ls=localStorage.getItem("smedtec_flow_state"); if(ls) data=JSON.parse(ls); }catch(e){} }
+    return data;
+  }
+  function applySaved(){
+    var d=readSaved(); if(!d) return;
+    if(d.c){ state.company=d.c; var ci=document.getElementById("company"); if(ci) ci.value=d.c; }
+    if(d.off){ d.off.split("-").forEach(function(id){ if(state.enabled.hasOwnProperty(id)) state.enabled[id]=false; }); }
+    if(d.s){ state.scenario=d.s; }
+    document.querySelectorAll(".stack-toggle").forEach(function(b){ var id=b.getAttribute("data-toggle"); b.setAttribute("aria-pressed", state.enabled[id]?"true":"false"); });
+    document.querySelectorAll("#scenarios .chip").forEach(function(c){ c.setAttribute("aria-pressed", c.getAttribute("data-scenario")===state.scenario?"true":"false"); });
+  }
+  function copyShare(){
+    var btn=document.getElementById("btn-share"), url=location.href;
+    function ok(){ btn.textContent="Link copied"; btn.classList.add("ok"); setTimeout(function(){ btn.textContent="Copy share link"; btn.classList.remove("ok"); },1600); }
+    try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(ok, ok); } else { ok(); } }catch(e){ ok(); }
+  }
+
+  /* ---- guided tour ---- */
+  var TOUR=[
+    {sel:"#hub", title:"One layer you own", body:"Everything connects here \u2014 products, claims, suppliers and tasks, kept in sync. It is yours, not a subscription you rent."},
+    {ids:["sup","lab","pim","reg"], title:"What flows in", body:"On the left: your suppliers and labs, your product catalogue, and live rule changes for every market you sell into."},
+    {ids:["slack","tasks","data","email"], title:"Where work lands", body:"On the right: your chat, your project board, your own registers and email \u2014 the tools your team already uses."},
+    {sel:".ai-bar", title:"AI reasons, you decide", body:"When there is a judgement to make, the AI reasons it through and recommends. Approving the action is always yours."},
+    {sel:"#scenarios", title:"Watch it run", body:"Press play on any of these and a real event moves through the whole connected system. Want to see one now?", final:true}
+  ];
+  var tourIdx=-1, tourSeen=false;
+  function unionRect(ids){
+    var r=null; ids.forEach(function(id){ var el=nodeEls[id]; if(!el) return; var b=el.getBoundingClientRect();
+      if(!r) r={l:b.left,t:b.top,r:b.right,b:b.bottom}; else { r.l=Math.min(r.l,b.left); r.t=Math.min(r.t,b.top); r.r=Math.max(r.r,b.right); r.b=Math.max(r.b,b.bottom);} });
+    return r? {left:r.l,top:r.t,width:r.r-r.l,height:r.b-r.t}:null;
+  }
+  function stepRect(step){
+    if(step.ids) return unionRect(step.ids);
+    if(step.sel){ var el=document.querySelector(step.sel); if(el){ var b=el.getBoundingClientRect(); return {left:b.left,top:b.top,width:b.width,height:b.height}; } }
+    return null;
+  }
+  function renderTour(){
+    var step=TOUR[tourIdx], spot=document.getElementById("tour-spot"), card=document.getElementById("tour-card"), rect=stepRect(step), pad=8;
+    if(rect){
+      spot.classList.remove("center");
+      spot.style.left=(rect.left-pad)+"px"; spot.style.top=(rect.top-pad)+"px";
+      spot.style.width=(rect.width+pad*2)+"px"; spot.style.height=(rect.height+pad*2)+"px";
+    } else { spot.classList.add("center"); spot.style.left="50%"; spot.style.top="50%"; spot.style.width="0"; spot.style.height="0"; }
+    var back = tourIdx>0 ? '<button class="tc-btn" data-tour="back">Back</button>' : '';
+    var nextLabel = step.final ? "Watch one live" : "Next";
+    card.innerHTML='<button class="tc-skip" data-tour="skip">Skip</button>'+
+      '<div class="tc-eyebrow">Tour \u00b7 '+(tourIdx+1)+' of '+TOUR.length+'</div>'+
+      '<h3>'+step.title+'</h3><p>'+step.body+'</p>'+
+      '<div class="tc-foot"><span class="tc-steps">'+(tourIdx+1)+'/'+TOUR.length+'</span>'+
+      '<span class="tc-btns">'+back+'<button class="tc-btn primary" data-tour="next">'+nextLabel+'</button></span></div>';
+    var vw=window.innerWidth, vh=window.innerHeight, cw=Math.min(300, vw*0.88);
+    card.style.width=cw+"px"; var ch=card.offsetHeight||190, cx, cy;
+    if(rect){
+      cx=rect.left+rect.width/2-cw/2;
+      if(rect.top+rect.height+14+ch<=vh-10) cy=rect.top+rect.height+14;
+      else if(rect.top-14-ch>=10) cy=rect.top-14-ch;
+      else cy=Math.max(10, vh-ch-10);
+    } else { cx=vw/2-cw/2; cy=vh/2-ch/2; }
+    cx=Math.max(12, Math.min(cx, vw-cw-12)); cy=Math.max(10, Math.min(cy, vh-ch-10));
+    card.style.left=cx+"px"; card.style.top=cy+"px";
+  }
+  function startTour(){ if(state.playing) stopScenario(); tourIdx=0; var o=document.getElementById("tour"); o.classList.add("on"); o.setAttribute("aria-hidden","false"); renderTour(); }
+  function closeTour(){ var o=document.getElementById("tour"); o.classList.remove("on"); o.setAttribute("aria-hidden","true"); tourIdx=-1; tourSeen=true; try{ localStorage.setItem("smedtec_flow_tour","1"); }catch(e){} }
+  function tourNext(){ var step=TOUR[tourIdx]; if(step.final){ closeTour(); setScenario("report"); persist(); playScenario(); return; } tourIdx++; if(tourIdx>=TOUR.length){ closeTour(); return; } renderTour(); }
+  function tourBack(){ if(tourIdx>0){ tourIdx--; renderTour(); } }
+  document.getElementById("tour").addEventListener("click", function(e){ var b=e.target.closest("[data-tour]"); if(!b) return; var a=b.getAttribute("data-tour"); if(a==="skip") closeTour(); else if(a==="next") tourNext(); else if(a==="back") tourBack(); });
+  window.addEventListener("resize", function(){ if(tourIdx>=0) renderTour(); });
+  document.getElementById("btn-tour").addEventListener("click", startTour);
+  document.getElementById("btn-share").addEventListener("click", copyShare);
+
+  /* ---- init ---- */
+  buildNodes(); buildEdges(); buildScenarioChips(); buildStackToggles();
+  applySaved(); applyEnabled(); applyCompany();
+  drawIn(function(){
+    countUp(); renderCounts(); startAmbient();
+    var seen=false; try{ seen=!!localStorage.getItem("smedtec_flow_tour"); }catch(e){}
+    if(!seen && !tourSeen){ setTimeout(function(){ if(tourIdx<0 && !state.playing) startTour(); }, 700); }
+  });
+  setInterval(tickSync,1000);
+  setInterval(addFeedLine,3400);
+  setInterval(ambientMote,2700);
+})();
+</script>
+</body>
+</html>
