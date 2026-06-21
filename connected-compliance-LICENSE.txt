@@ -1,0 +1,17 @@
+Copyright © 2026 SMEDTEC Ltd. All rights reserved.
+
+This repository and its contents — including the code, design, copy and
+visual system — are proprietary to SMEDTEC Ltd and are provided for
+demonstration purposes only.
+
+No licence is granted to copy, reproduce, modify, distribute, publish, or
+create derivative works from any part of this repository, except by SMEDTEC
+Ltd or with its prior written permission.
+
+"SMEDTEC" and "SMEDTEC Studio" are marks of SMEDTEC Ltd.
+
+This is not an open-source licence. The repository may be publicly viewable
+for hosting purposes (GitHub Pages); public visibility does not grant any
+right of use.
+
+SMEDTEC Ltd · Manchester, United Kingdom · info@smedtec.co.uk
